@@ -55,14 +55,17 @@ with st.form(key='my_form'):
     submitted = st.form_submit_button('Search')
 
     if submitted:
-        # Pull the data from the data source (ideally only students & time)
-        df= helpers.get_attendance(
-            students=students,
-            date_start=date_range[0],
-            date_end=date_range[1],
-            drop_duplicates=only_final_values,
-        )
-        
-        st.dataframe(df)
+        if date_range:
+            # Pull the data from the data source (ideally only students & time)
+            df= helpers.get_attendance(
+                students=students,
+                date_start=date_range[0],
+                date_end=date_range[1],
+                drop_duplicates=only_final_values,
+            )
+            
+            st.dataframe(df)
+        else:
+            st.warning('Please select a date range')
 
 
