@@ -22,8 +22,8 @@ pages = {
             icon=':material/checklist:',
         ),
         st.Page(
-            page='month.py',
-            title='Month Aggregations',
+            page='attendance.py',
+            title='Attendance',
             icon=':material/calendar_today:',
         )
     ]

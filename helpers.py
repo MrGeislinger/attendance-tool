@@ -189,3 +189,98 @@ def get_students(
     )
     
     return df
+
+def get_attendance(
+    students: Iterable[str] = None,
+    date_start: datetime.datetime | None = None,
+    date_end: datetime.datetime | None = None,
+    drop_duplicates: bool = False,
+) -> pd.DataFrame:
+    """Get attendance for a date range and name of students.
+
+    Args:
+        students: List of students to get attendance for. If None, get all.
+        date_start: Start date to get attendance for. Default to today
+        date_end: End date to get attendance for. Default to next day.
+        drop_duplicates: Whether to drop duplicate students. Default to False.
+    Returns:
+    """
+    # Default dates available
+    if date_start is None:
+        date_start = datetime.datetime.today()
+    if date_end is None:
+        date_end = date_start + datetime.timedelta(days=1)
+
+    # Check that date_end is later than start
+    if date_end < date_start:
+        raise ValueError('date_end must be later than date_start')
+
+    # Data sources: checkin & checkout
+    print('Getting checked in students')
+    conn_to_gsheet_checkin = create_connection(
+        name='checkin',
+    )
+    df_checkins = conn_to_gsheet_checkin.read(
+        worksheet='checkins',
+        ttl=0,  # Always reset cache
+    )
+    df_checkins['Action'] = 'checkin'
+
+    print('Getting checked out students')
+    conn_to_gsheet_checkout = create_connection(
+        name='checkout',
+    )
+    df_checkouts = conn_to_gsheet_checkout.read(
+        worksheet='checkouts',
+        ttl=0,  # Always reset cache
+    )
+    df_checkouts['Action'] = 'checkout'
+
+    # Combine data from checkins & checkouts, making action into its own column
+    df = pd.concat([df_checkins, df_checkouts])
+
+    # Filter only the date specified (convert to string first)
+    df = df[
+        (df['SubmitDate'] >= date_start.strftime('%Y-%m-%d')) &
+        (df['SubmitDate'] <= date_end.strftime('%Y-%m-%d'))
+    ]
+
+    # Filter only students (using all if not given)
+    if students:
+        df = df[df['FullName'].isin(students)]
+
+    # Make it easier to find dates
+    df = df.sort_values(
+        by=[
+            'LastName',
+            'FirstName',
+            'SubmitDate',
+            'SubmitTime',
+        ],
+        ascending=True,
+    )
+    order_of_columns = [
+        'LastName',
+        'FirstName',
+        'Action',
+        'SubmitDate',
+        'SubmitTime',
+        'OverrideTime',
+        'Grade',
+    ]
+    df = df[order_of_columns]
+
+    # Default to displaying all values by students
+    if drop_duplicates:
+        print('Dropping duplicate entries before displaying')
+        df = df.drop_duplicates(
+            subset=[
+                'LastName',
+                'FirstName',
+                'SubmitDate',
+                'Action',
+            ],
+            keep='last',  # Assume the last one submitted is the override
+        )
+
+    return df
