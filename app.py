@@ -25,6 +25,11 @@ pages = {
             page='attendance.py',
             title='Attendance',
             icon=':material/calendar_today:',
+        ),
+        st.Page(
+            page='corrections.py',
+            title='Corrections',
+            icon=':material/warning:',
         )
     ]
 }

@@ -20,7 +20,7 @@ names = helpers.get_student_roster(
 st.write('# Attendance Record')
 
 st.write(
-    'Look up current attendance record for students (grouped by student name).\n'
+    'Look up current attendance record for students (grouped by name).\n'
     '- [REQUIRED] Choose a date range → can be just a single date\n'
     '- Select students (blank for all students)\n'
     '- Option to display only final value for corrections (will only show most '
