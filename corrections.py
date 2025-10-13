@@ -17,6 +17,6 @@ st.write(
     f'[Correction Google Form]({st.secrets.corrections.form_url})'
 )
 st.write(
-    f'[Spreasheet]({st.secrets.corrections.spreadsheet_url}) of '
-    'corrections/adjuments already submitted.'
+    f'[Spreadsheet]({st.secrets.corrections.spreadsheet_url}) of '
+    'corrections/adjustments already submitted.'
 )
