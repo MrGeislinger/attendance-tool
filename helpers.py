@@ -47,6 +47,7 @@ def create_connection(
     Args:        
         name: The name of the connection.
         cache_ttl_secs: How long to cache the data for.
+
     Returns:
         conn: Connection object to data source.
     """
@@ -307,3 +308,124 @@ def format_student_name(
         ].values[0]
     )
     return f'{value[0]} ({value[1]})'
+
+def get_corrections(
+    students: Iterable[str] = None,
+    date_start: datetime.datetime | None = None,
+    date_end: datetime.datetime | None = None,
+) -> pd.DataFrame:
+    """Get corrections for a date range and name of students.
+
+    Args:
+        students: List of students to get corrections for. If None, get all.
+        date_start: Start date to get corrections for. Default to today
+        date_end: End date to get corrections for. Default to next day.
+
+    Returns:
+        DataFrame of corrections.
+    """
+    # Default dates available
+    if date_start is None:
+        date_start = datetime.datetime.today()
+    if date_end is None:
+        date_end = date_start + datetime.timedelta(days=1)
+
+    # Check that date_end is later than start
+    if date_end < date_start:
+        raise ValueError('date_end must be later than date_start')
+
+    # Data source
+    conn_to_gsheet_checkin = create_connection(
+        name='corrections',
+    )
+    df_corrections = conn_to_gsheet_checkin.read(
+        worksheet='Form Responses 1',
+        ttl=0,  # Always reset cache
+    )
+
+    # Rename Columns (defined from original source)
+    column_renames = {
+        'Choose Grade of Student': 'Grade',
+        'Email Address': 'SubmittedBy',
+        'Checkin or Checkout?': 'Action',
+        'StudentName': 'FullName',
+        'Additional Notes': 'Notes',
+    }
+    df_corrections = df_corrections.rename(
+        columns=column_renames,
+    )
+
+    # Convert to datetime (makes it possible to query against)
+    df_corrections['Date'] = pd.to_datetime(
+        df_corrections['Date'],
+    )
+    df_corrections['Time'] = pd.to_datetime(
+        df_corrections['Time'],
+    )
+
+    # Filter only the date specified (convert to string first)
+    df_corrections_filtered = df_corrections[
+        (df_corrections['Date'] >= date_start.strftime('%Y-%m-%d')) &
+        (df_corrections['Date'] <= date_end.strftime('%Y-%m-%d'))
+    ]
+
+    # Identify the columns to keep
+    id_cols = [
+        'Timestamp',
+        'SubmittedBy',
+        'Grade',
+        'Session',
+        'Action',
+        'Date',
+        'Time',
+        'Notes',
+    ]
+
+    # Identify the columns to melt
+    student_cols = [
+        col for col in df_corrections_filtered.columns
+        if 'Choose Student (Grade' in col
+    ]
+
+    # Melt/transform the DataFrame
+    df_corrections_melted = pd.melt(
+        df_corrections_filtered,
+        id_vars=id_cols,
+        value_vars=student_cols,
+        value_name='FullName'  # The new column for the student names
+    )
+
+    # Remove rows where 'FullName' is empty (created by melt), just in case
+    df_corrections_melted = df_corrections_melted.dropna(subset=['FullName'])
+
+    # Filter only students (using all if not given)
+    # This can only be done after melting to 'FullName'
+    if students:
+        df_corrections_melted = df_corrections_melted[
+            df_corrections_melted['FullName'].isin(students)
+        ]
+
+    # Select and reorder the columns for the final DataFrame
+    final_colums = [
+        'SubmittedBy',
+        'Timestamp',
+        'FullName',
+        'Date',
+        'Session',
+        'Time',
+        'Action',
+        'Grade',
+        'Notes',
+    ]
+    df_corrections_final = df_corrections_melted[final_colums]
+
+    # Make the date simply display as MM/DD/YYY
+    df_corrections_final['Date'] = pd.to_datetime(
+        df_corrections_final['Date']
+    ).dt.strftime('%m/%d/%Y')
+    # Make the time simply display as HH:MM
+    df_corrections_final['Time'] = pd.to_datetime(
+        df_corrections_final['Time']
+    ).dt.strftime('%H:%M')
+
+    return df_corrections_final
