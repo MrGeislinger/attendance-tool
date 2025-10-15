@@ -418,6 +418,15 @@ def get_corrections(
         'Notes',
     ]
     df_corrections_final = df_corrections_melted[final_colums]
+    df_corrections_final = df_corrections_final.sort_values(
+        by=[
+            'Date',
+            'FullName',
+            'Session',
+            'Time',
+        ],
+        ascending=True,
+    )
 
     # Make the date simply display as MM/DD/YYY
     df_corrections_final['Date'] = pd.to_datetime(
