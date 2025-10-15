@@ -347,7 +347,7 @@ def get_corrections(
     column_renames = {
         'Choose Grade of Student': 'Grade',
         'Email Address': 'SubmittedBy',
-        'Checkin or Checkout?': 'Action',
+        'Checkin, Checkout, or Remove?': 'Action',
         'StudentName': 'FullName',
         'Additional Notes': 'Notes',
     }
