@@ -2,20 +2,6 @@ import streamlit as st
 import helpers
 
 
-def format_student_name(full_name) -> str:
-    '''Use name as search to get "FullName (Grade)'''
-    value = (
-        names[names['FullName'] == full_name][
-            ['FullName', 'Grade']
-        ].values[0]
-    )
-    return f'{value[0]} ({value[1]})'
-
-
-names = helpers.get_student_roster(
-    name='studentinfo',
-    cache_ttl_secs=helpers.SECS_IN_DAY,
-)
 
 st.write('# Attendance Record')
 
@@ -26,6 +12,11 @@ st.write(
     '- Option to display only final value for corrections (will only show most '
     'recent correction or record). Recommended to leave off if wanting to see '
     'all records & corrections.'
+)
+
+names = helpers.get_student_roster(
+    name='studentinfo',
+    cache_ttl_secs=helpers.SECS_IN_DAY,
 )
 
 # Form to select student(s), date range, session time
@@ -42,7 +33,9 @@ with st.form(key='my_form'):
     students = st.multiselect(
         'Select students (blank for all students)',
         names['FullName'],
-        format_func=format_student_name,
+        format_func=(
+            lambda x: helpers.format_student_name(x, names)
+        ),
     )
 
 

@@ -66,6 +66,7 @@ def dataframe_to_list(
 
     Args:
         df: DataFrame to convert.
+
     Returns:
         list[list[str]]: List of list of strings.
     """
@@ -159,6 +160,7 @@ def get_students(
         time_period: TimePeriod.MORNING or TimePeriod.AFTERNOON.
         date: Date to filter by.
         cache_ttl_secs: How long to cache the data for.
+
     Returns:
         pd.DataFrame: The students already checked in.
     """
@@ -204,6 +206,7 @@ def get_attendance(
         date_end: End date to get attendance for. Default to next day.
         drop_duplicates: Whether to drop duplicate students. Default to False.
     Returns:
+        DataFrame of attendance.
     """
     # Default dates available
     if date_start is None:
@@ -284,3 +287,23 @@ def get_attendance(
         )
 
     return df
+
+def format_student_name(
+        full_name: str,
+        names: pd.DataFrame,
+    ) -> str:
+    '''Use name as search to get "FullName (Grade)".
+
+    Args:
+        full_name: Full name of student to format.
+        names: DataFrame of student information.
+    
+    Returns:
+        str: Formatted name.
+    '''
+    value = (
+        names[names['FullName'] == full_name][
+            ['FullName', 'Grade']
+        ].values[0]
+    )
+    return f'{value[0]} ({value[1]})'
